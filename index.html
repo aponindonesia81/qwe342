@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hands-Free Voice Controller Pro</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #0d1117;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            text-align: center;
+        }
+        .card {
+            background: #161b22;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+            border: 1px solid #30363d;
+            max-width: 90%;
+            width: 350px;
+        }
+        .mic-badge {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: #238636;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 35px;
+            margin: 0 auto 20px auto;
+            box-shadow: 0 0 15px rgba(35, 134, 54, 0.6);
+            transition: all 0.3s ease;
+        }
+        .listening {
+            animation: pulse 1.5s infinite;
+            background: #da3633;
+            box-shadow: 0 0 20px rgba(218, 54, 51, 0.8);
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        button {
+            background-color: #238636;
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: 0.3s;
+            margin-top: 15px;
+        }
+        #status { margin-top: 15px; font-size: 18px; color: #58a6ff; font-weight: 600; }
+        #cmd { margin-top: 10px; font-size: 15px; color: #8b949e; background: #0d1117; padding: 10px; border-radius: 8px; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <div id="micIcon" class="mic-badge">🎙️</div>
+    <h2>অটোমেটিক ভয়েস অ্যাসিস্ট্যান্ট</h2>
+    <p style="font-size: 13px; color: #8b949e;">একবার 'Start' ক্লিক করলে এটি অনবরত ব্যাকগ্রাউন্ডে কমান্ড শুনবে</p>
+    
+    <button id="startBtn" onclick="toggleListening()">▶️ ভয়েস সিস্টেম শুরু করুন</button>
+    
+    <div id="status">স্ট্যাটাস: সিস্টেম বন্ধ আছে</div>
+    <div id="cmd">আপনি বলেছেন: -</div>
+</div>
+
+<script>
+    let recognition = null;
+    let isSystemActive = false;
+    let track = null;
+
+    // ১. কন্টিনিউয়াস স্পিচ ইনজিলাইজেশন
+    function initSpeech() {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+        if (!SpeechRecognition) {
+            alert("আপনার ব্রাউজারে ভয়েস সাপোর্ট নেই! Chrome ব্যবহার করুন।");
+            return;
+        }
+
+        recognition = new SpeechRecognition();
+        recognition.continuous = true; // অনবরত কথা শোনার জন্য সত্য (True)
+        recognition.interimResults = false;
+        recognition.lang = 'bn-BD'; // বাংলা ও ইংরেজি মিশ্রিত আওয়াজ বুঝতে পারে
+
+        recognition.onstart = function() {
+            document.getElementById('status').innerText = "স্ট্যাটাস: লাইভ শুনছি... (কথা বলুন)";
+            document.getElementById('micIcon').classList.add('listening');
+        };
+
+        // কথা শুনলেই অটো-প্রসেস করবে
+        recognition.onresult = async function(event) {
+            const lastIndex = event.results.length - 1;
+            const command = event.results[lastIndex][0].transcript.toLowerCase().trim();
+            document.getElementById('cmd').innerText = "আপনি বলেছেন: " + command;
+            
+            await executeCommand(command);
+        };
+
+        // সার্ভিস বন্ধ হয়ে গেলে নিজে থেকেই পুনরায় চালু করবে (Auto-Restart Feature)
+        recognition.onend = function() {
+            if (isSystemActive) {
+                console.log("Auto restarting speech recognition...");
+                recognition.start(); // বারবার বন্ধ না হয়ে একা একাই আবার রিস্টার্ট হবে
+            } else {
+                document.getElementById('status').innerText = "স্ট্যাটাস: বন্ধ করা হয়েছে";
+                document.getElementById('micIcon').classList.remove('listening');
+            }
+        };
+
+        recognition.onerror = function(event) {
+            console.log("Speech Error: ", event.error);
+            if (isSystemActive && event.error !== 'no-speech') {
+                setTimeout(() => { recognition.start(); }, 1000);
+            }
+        };
+    }
+
+    // ২. স্টার্ট/স্টপ অন-অফ সুইচ
+    function toggleListening() {
+        if (!recognition) initSpeech();
+
+        const btn = document.getElementById('startBtn');
+        if (!isSystemActive) {
+            isSystemActive = true;
+            recognition.start();
+            btn.innerText = "⏹️ ভয়েস বন্ধ করুন";
+            btn.style.backgroundColor = "#da3633";
+        } else {
+            isSystemActive = false;
+            recognition.stop();
+            btn.innerText = "▶️ ভয়েস সিস্টেম শুরু করুন";
+            btn.style.backgroundColor = "#238636";
+        }
+    }
+
+    // ৩. কমান্ড প্রসেসিং
+    async function executeCommand(cmd) {
+        // ফ্ল্যাশলাইট অন
+        if (cmd.includes("লাইট") || cmd.includes("আলো") || cmd.includes("flash") || cmd.includes("torch") || cmd.includes("light on")) {
+            await toggleTorch(true);
+            document.getElementById('status').innerText = "স্ট্যাটাস: Flashlight ON";
+            speakText("ফ্ল্যাশলাইট চালু করা হলো");
+        } 
+        // ফ্ল্যাশলাইট অফ
+        else if (cmd.includes("বন্ধ") || cmd.includes("নেভাও") || cmd.includes("off") || cmd.includes("stop light")) {
+            await toggleTorch(false);
+            document.getElementById('status').innerText = "স্ট্যাটাস: Flashlight OFF";
+            speakText("ফ্ল্যাশলাইট বন্ধ করা হলো");
+        } 
+        // ভাইব্রেশন
+        else if (cmd.includes("ভাইব্রেট") || cmd.includes("vibrate")) {
+            if (navigator.vibrate) {
+                navigator.vibrate([500, 200, 500]);
+                speakText("Vibrating");
+            }
+        } 
+        // কল অপশন
+        else if (cmd.includes("কল") || cmd.includes("call") || cmd.includes("dial")) {
+            speakText("Opening dialer");
+            window.location.href = "tel:";
+        }
+    }
+
+    async function toggleTorch(on) {
+        try {
+            if (on) {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                track = stream.getVideoTracks()[0];
+                await track.applyConstraints({ advanced: [{ torch: true }] });
+            } else {
+                if (track) {
+                    track.stop();
+                    track = null;
+                }
+            }
+        } catch (err) {
+            console.log("Torch Error: ", err);
+        }
+    }
+
+    function speakText(text) {
+        const speech = new SpeechSynthesisUtterance(text);
+        speech.lang = 'bn-BD';
+        window.speechSynthesis.speak(speech);
+    }
+</script>
+
+</body>
+</html>
