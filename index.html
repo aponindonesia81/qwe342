@@ -3,88 +3,156 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Voice Assistant Pro</title>
+    <title>Super Premium Voice Widget</title>
     <style>
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #0d1117;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: #090d16;
             color: #ffffff;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
             margin: 0;
-            text-align: center;
-            transition: background 0.3s;
+            padding: 0;
+            overflow-x: hidden;
         }
-        .card {
-            background: #161b22;
-            padding: 30px;
+
+        /* Floating Mini Console Widget (স্ক্রিনের নিচে ভাসমান কনসোল) */
+        .floating-console {
+            position: fixed;
+            bottom: 20px;
+            right: 15px;
+            left: 15px;
+            background: rgba(22, 27, 34, 0.95);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(88, 166, 255, 0.3);
             border-radius: 20px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.6);
-            border: 1px solid #30363d;
-            max-width: 90%;
-            width: 350px;
+            padding: 15px 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 9999;
         }
-        .mic-badge {
-            width: 80px;
-            height: 80px;
+
+        .widget-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .mic-orb {
+            width: 50px;
+            height: 50px;
             border-radius: 50%;
-            background: #238636;
+            background: linear-gradient(135deg, #238636, #2ea043);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 35px;
-            margin: 0 auto 20px auto;
-            box-shadow: 0 0 15px rgba(35, 134, 54, 0.6);
+            font-size: 24px;
+            box-shadow: 0 0 15px rgba(46, 160, 67, 0.5);
             transition: all 0.3s ease;
         }
-        .listening {
-            animation: pulse 1.5s infinite;
-            background: #da3633;
-            box-shadow: 0 0 20px rgba(218, 54, 51, 0.8);
+
+        .mic-orb.active {
+            background: linear-gradient(135deg, #da3633, #f85149);
+            box-shadow: 0 0 25px rgba(248, 81, 73, 0.8);
+            animation: pulse-ring 1.5s infinite;
         }
-        @keyframes pulse {
+
+        @keyframes pulse-ring {
             0% { transform: scale(1); }
-            50% { transform: scale(1.1); }
+            50% { transform: scale(1.08); }
             100% { transform: scale(1); }
         }
-        button {
-            background-color: #238636;
-            color: white;
-            border: none;
-            padding: 14px 28px;
-            font-size: 16px;
-            font-weight: bold;
-            border-radius: 30px;
-            cursor: pointer;
-            transition: 0.3s;
-            margin-top: 15px;
+
+        .status-text {
+            display: flex;
+            flex-direction: column;
+            text-align: left;
         }
-        #status { margin-top: 15px; font-size: 18px; color: #58a6ff; font-weight: 600; }
-        #cmd { margin-top: 10px; font-size: 15px; color: #8b949e; background: #0d1117; padding: 10px; border-radius: 8px; }
+
+        .status-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #58a6ff;
+        }
+
+        .last-cmd {
+            font-size: 12px;
+            color: #8b949e;
+            max-width: 180px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .control-btn {
+            background: #21262d;
+            border: 1px solid #30363d;
+            color: #fff;
+            padding: 10px 16px;
+            border-radius: 30px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        /* In-App Interactive Screen View */
+        #viewport {
+            width: 100vw;
+            height: calc(100vh - 100px);
+            border: none;
+            background: #0d1117;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .welcome-hero {
+            padding: 20px;
+        }
+
+        .welcome-hero h1 {
+            font-size: 26px;
+            color: #58a6ff;
+        }
+
+        .welcome-hero p {
+            color: #8b949e;
+            font-size: 14px;
+            line-height: 1.6;
+        }
     </style>
 </head>
 <body>
 
-<div class="card" id="mainCard">
-    <div id="micIcon" class="mic-badge">🎙️</div>
-    <h2>অটোমেটিক ভয়েস অ্যাসিস্ট্যান্ট</h2>
-    <p style="font-size: 13px; color: #8b949e;">একবার 'Start' ক্লিক করলে এটি অনবরত ভয়েস শুনবে</p>
-    
-    <button id="startBtn" onclick="toggleListening()">▶️ ভয়েস সিস্টেম শুরু করুন</button>
-    
-    <div id="status">স্ট্যাটাস: সিস্টেম বন্ধ আছে</div>
-    <div id="cmd">আপনি বলেছেন: -</div>
-</div>
+    <!-- মূল ডিসপ্লে ভিউয়ার -->
+    <div id="viewport">
+        <div class="welcome-hero">
+            <h1>🚀 Hands-Free AI Voice Assistant</h1>
+            <p>ফোন টেবিলে রেখে সম্পূর্ণ ভয়েস দিয়ে কন্ট্রোল করুন।<br>
+            বলুন: <b>"ওপেন ফেসবুক"</b>, <b>"ওপেন ফ্ল্যাশ"</b>, <b>"ইউটিউব খোলো"</b></p>
+        </div>
+    </div>
+
+    <!-- ভাসমান প্রিমিয়াম উইজেট (Floating Console) -->
+    <div class="floating-console">
+        <div class="widget-left">
+            <div id="micOrb" class="mic-orb">🎙️</div>
+            <div class="status-text">
+                <span id="statusTitle" class="status-title">ভয়েস কনসোল প্রস্তুত</span>
+                <span id="lastCmd" class="last-cmd">কমান্ডের অপেক্ষায়...</span>
+            </div>
+        </div>
+        <button id="toggleBtn" class="control-btn" onclick="toggleVoiceSystem()">শুরু করুন</button>
+    </div>
 
 <script>
     let recognition = null;
-    let isSystemActive = false;
-    let track = null;
+    let isListening = false;
+    let torchTrack = null;
 
-    function initSpeech() {
+    // ১. কন্টিনিউয়াস এবং স্মুথ ভয়েস ইঞ্জিন
+    function initVoiceEngine() {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
         if (!SpeechRecognition) {
@@ -98,124 +166,125 @@
         recognition.lang = 'bn-BD';
 
         recognition.onstart = function() {
-            document.getElementById('status').innerText = "স্ট্যাটাস: লাইভ শুনছি... (কথা বলুন)";
-            document.getElementById('micIcon').classList.add('listening');
+            document.getElementById('statusTitle').innerText = "লাইভ শুনছি...";
+            document.getElementById('statusTitle').style.color = "#3fb950";
+            document.getElementById('micOrb').classList.add('active');
         };
 
         recognition.onresult = async function(event) {
             const lastIndex = event.results.length - 1;
             const command = event.results[lastIndex][0].transcript.toLowerCase().trim();
-            document.getElementById('cmd').innerText = "আপনি বলেছেন: " + command;
+            document.getElementById('lastCmd').innerText = "কমান্ড: " + command;
             
-            await executeCommand(command);
+            await processSmartCommand(command);
         };
 
         recognition.onend = function() {
-            if (isSystemActive) {
-                recognition.start();
+            if (isListening) {
+                recognition.start(); // অটো-রিস্টার্ট
             } else {
-                document.getElementById('status').innerText = "স্ট্যাটাস: বন্ধ করা হয়েছে";
-                document.getElementById('micIcon').classList.remove('listening');
+                document.getElementById('statusTitle').innerText = "সিস্টেম বন্ধ";
+                document.getElementById('statusTitle').style.color = "#58a6ff";
+                document.getElementById('micOrb').classList.remove('active');
             }
         };
 
         recognition.onerror = function(event) {
-            if (isSystemActive && event.error !== 'no-speech') {
-                setTimeout(() => { recognition.start(); }, 1000);
+            if (isListening && event.error !== 'no-speech') {
+                setTimeout(() => { recognition.start(); }, 800);
             }
         };
     }
 
-    function toggleListening() {
-        if (!recognition) initSpeech();
+    function toggleVoiceSystem() {
+        if (!recognition) initVoiceEngine();
 
-        const btn = document.getElementById('startBtn');
-        if (!isSystemActive) {
-            isSystemActive = true;
+        const btn = document.getElementById('toggleBtn');
+        if (!isListening) {
+            isListening = true;
             recognition.start();
-            btn.innerText = "⏹️ ভয়েস বন্ধ করুন";
-            btn.style.backgroundColor = "#da3633";
+            btn.innerText = "থামান";
+            btn.style.background = "#da3633";
         } else {
-            isSystemActive = false;
+            isListening = false;
             recognition.stop();
-            btn.innerText = "▶️ ভয়েস সিস্টেম শুরু করুন";
-            btn.style.backgroundColor = "#238636";
+            btn.innerText = "শুরু করুন";
+            btn.style.background = "#21262d";
         }
     }
 
-    async function executeCommand(cmd) {
-        // ১. ফ্ল্যাশলাইট / লাইট অন ও অফ (বাংলা ও ইংরেজি শব্দ)
-        if (cmd.includes("ফ্ল্যাশ") || cmd.includes("flash") || cmd.includes("light") || cmd.includes("আলো")) {
-            if (cmd.includes("off") || cmd.includes("বন্ধ") || cmd.includes("নেভাও")) {
-                await toggleTorch(false);
-                document.getElementById('status').innerText = "স্ট্যাটাস: Flashlight OFF";
-                speakText("ফ্ল্যাশ বন্ধ করা হলো");
+    // ২. স্মার্ট কমান্ড ম্যাচিং লজিক
+    async function processSmartCommand(cmd) {
+        // --- ফেসবুক ওপেন করার কমান্ড ---
+        if (cmd.includes("ফেসবুক") || cmd.includes("facebook") || cmd.includes("fb")) {
+            speakResponse("ফেসবুক খোলা হচ্ছে");
+            document.getElementById('statusTitle').innerText = "Opening Facebook...";
+            
+            // ১. অ্যাপ ডিপ-লিংক ট্রাই করবে, না পারলে ব্রাউজারে অ্যাকাউন্ট খুলবে
+            window.location.href = "fb://feed"; 
+            setTimeout(() => {
+                window.open("https://m.facebook.com", "_self");
+            }, 1000);
+        }
+
+        // --- ফ্ল্যাশলাইট অন করার কমান্ড ---
+        else if (cmd.includes("ফ্ল্যাশ") || cmd.includes("flash") || cmd.includes("আলো") || cmd.includes("light")) {
+            if (cmd.includes("বন্ধ") || cmd.includes("off") || cmd.includes("নেভাও")) {
+                await controlTorch(false);
+                speakResponse("ফ্ল্যাশলাইট বন্ধ করা হলো");
             } else {
-                await toggleTorch(true);
-                document.getElementById('status').innerText = "স্ট্যাটাস: Flashlight ON";
-                speakText("ফ্ল্যাশ চালু করা হলো");
+                await controlTorch(true);
+                speakResponse("ফ্ল্যাশলাইট চালু করা হলো");
             }
-        } 
-        // ২. ইউটিউব ওপেন
+        }
+
+        // --- ইউটিউব ওপেন করার কমান্ড ---
         else if (cmd.includes("ইউটিউব") || cmd.includes("youtube")) {
-            document.getElementById('status').innerText = "স্ট্যাটাস: Opening YouTube";
-            speakText("ইউটিউব খোলা হচ্ছে");
-            window.open("https://www.youtube.com", "_blank");
+            speakResponse("ইউটিউব খোলা হচ্ছে");
+            window.open("https://www.youtube.com", "_self");
         }
-        // ৩. ফেসবুক ওপেন
-        else if (cmd.includes("ফেসবুক") || cmd.includes("facebook") || cmd.includes("fb")) {
-            document.getElementById('status').innerText = "স্ট্যাটাস: Opening Facebook";
-            speakText("ফেসবুক খোলা হচ্ছে");
-            window.open("https://www.facebook.com", "_blank");
-        }
-        // ৪. গুগল ওপেন
-        else if (cmd.includes("গুগল") || cmd.includes("google")) {
-            document.getElementById('status').innerText = "স্ট্যাটাস: Opening Google";
-            speakText("গুগল খোলা হচ্ছে");
-            window.open("https://www.google.com", "_blank");
-        }
-        // ৫. কল ডায়ালার ওপেন
-        else if (cmd.includes("কল") || cmd.includes("call") || cmd.includes("dial")) {
-            document.getElementById('status').innerText = "স্ট্যাটাস: Opening Dialer";
-            speakText("কল ডায়ালার খোলা হচ্ছে");
+
+        // --- কল ডায়ালার ওপেন করার কমান্ড ---
+        else if (cmd.includes("কল") || cmd.includes("call") || cmd.includes("dial") || cmd.includes("ডায়াল")) {
+            speakResponse("কল ডায়ালার ওপেন করা হচ্ছে");
             window.location.href = "tel:";
         }
-        // ৬. ভাইব্রেশন
-        else if (cmd.includes("ভাইব্রেট") || cmd.includes("vibrate")) {
-            if (navigator.vibrate) {
-                navigator.vibrate([500, 200, 500]);
-                speakText("Vibrating");
-            }
+
+        // --- গুগল সার্চ বা ওপেন ---
+        else if (cmd.includes("গুগল") || cmd.includes("google")) {
+            speakResponse("গুগল খোলা হচ্ছে");
+            window.open("https://www.google.com", "_self");
         }
+
         else {
-            document.getElementById('status').innerText = "স্ট্যাটাস: অজানা কমান্ড";
-            speakText("কমান্ডটি বোঝা যায়নি");
+            console.log("Unrecognized: " + cmd);
         }
     }
 
-    async function toggleTorch(on) {
+    // ৩. ক্যামেরা ও হার্ডওয়্যার ফ্ল্যাশ কন্ট্রোল
+    async function controlTorch(enable) {
         try {
-            if (on) {
+            if (enable) {
                 const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-                track = stream.getVideoTracks()[0];
-                await track.applyConstraints({ advanced: [{ torch: true }] });
+                torchTrack = stream.getVideoTracks()[0];
+                await torchTrack.applyConstraints({ advanced: [{ torch: true }] });
             } else {
-                if (track) {
-                    track.stop();
-                    track = null;
+                if (torchTrack) {
+                    torchTrack.stop();
+                    torchTrack = null;
                 }
-                document.body.style.backgroundColor = "#0d1117";
+                document.body.style.backgroundColor = "#090d16";
             }
         } catch (err) {
-            // হার্ডওয়্যার টর্চ ব্লক হলে পুরো স্ক্রিন সাদা হয়ে লাইটের কাজ করবে
-            if (on) {
+            if (enable) {
                 document.body.style.backgroundColor = "#ffffff";
-                alert("ক্যামেরা লাইট সাপোর্ট করেনি! স্ক্রিনের আলো বাড়িয়ে দেওয়া হলো।");
+                speakResponse("স্ক্রিন ব্রাইটনেস বাড়াল হলো");
             }
         }
     }
 
-    function speakText(text) {
+    // ৪. ভয়েস ফিডব্যাক (Text-to-Speech)
+    function speakResponse(text) {
         const speech = new SpeechSynthesisUtterance(text);
         speech.lang = 'bn-BD';
         window.speechSynthesis.speak(speech);
