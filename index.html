@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hands-Free Voice Controller Pro</title>
+    <title>Voice Assistant Pro</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -16,6 +16,7 @@
             height: 100vh;
             margin: 0;
             text-align: center;
+            transition: background 0.3s;
         }
         .card {
             background: #161b22;
@@ -67,10 +68,10 @@
 </head>
 <body>
 
-<div class="card">
+<div class="card" id="mainCard">
     <div id="micIcon" class="mic-badge">🎙️</div>
     <h2>অটোমেটিক ভয়েস অ্যাসিস্ট্যান্ট</h2>
-    <p style="font-size: 13px; color: #8b949e;">একবার 'Start' ক্লিক করলে এটি অনবরত ব্যাকগ্রাউন্ডে কমান্ড শুনবে</p>
+    <p style="font-size: 13px; color: #8b949e;">একবার 'Start' ক্লিক করলে এটি অনবরত ভয়েস শুনবে</p>
     
     <button id="startBtn" onclick="toggleListening()">▶️ ভয়েস সিস্টেম শুরু করুন</button>
     
@@ -83,7 +84,6 @@
     let isSystemActive = false;
     let track = null;
 
-    // ১. কন্টিনিউয়াস স্পিচ ইনজিলাইজেশন
     function initSpeech() {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
@@ -93,16 +93,15 @@
         }
 
         recognition = new SpeechRecognition();
-        recognition.continuous = true; // অনবরত কথা শোনার জন্য সত্য (True)
+        recognition.continuous = true;
         recognition.interimResults = false;
-        recognition.lang = 'bn-BD'; // বাংলা ও ইংরেজি মিশ্রিত আওয়াজ বুঝতে পারে
+        recognition.lang = 'bn-BD';
 
         recognition.onstart = function() {
             document.getElementById('status').innerText = "স্ট্যাটাস: লাইভ শুনছি... (কথা বলুন)";
             document.getElementById('micIcon').classList.add('listening');
         };
 
-        // কথা শুনলেই অটো-প্রসেস করবে
         recognition.onresult = async function(event) {
             const lastIndex = event.results.length - 1;
             const command = event.results[lastIndex][0].transcript.toLowerCase().trim();
@@ -111,11 +110,9 @@
             await executeCommand(command);
         };
 
-        // সার্ভিস বন্ধ হয়ে গেলে নিজে থেকেই পুনরায় চালু করবে (Auto-Restart Feature)
         recognition.onend = function() {
             if (isSystemActive) {
-                console.log("Auto restarting speech recognition...");
-                recognition.start(); // বারবার বন্ধ না হয়ে একা একাই আবার রিস্টার্ট হবে
+                recognition.start();
             } else {
                 document.getElementById('status').innerText = "স্ট্যাটাস: বন্ধ করা হয়েছে";
                 document.getElementById('micIcon').classList.remove('listening');
@@ -123,14 +120,12 @@
         };
 
         recognition.onerror = function(event) {
-            console.log("Speech Error: ", event.error);
             if (isSystemActive && event.error !== 'no-speech') {
                 setTimeout(() => { recognition.start(); }, 1000);
             }
         };
     }
 
-    // ২. স্টার্ট/স্টপ অন-অফ সুইচ
     function toggleListening() {
         if (!recognition) initSpeech();
 
@@ -148,31 +143,53 @@
         }
     }
 
-    // ৩. কমান্ড প্রসেসিং
     async function executeCommand(cmd) {
-        // ফ্ল্যাশলাইট অন
-        if (cmd.includes("লাইট") || cmd.includes("আলো") || cmd.includes("flash") || cmd.includes("torch") || cmd.includes("light on")) {
-            await toggleTorch(true);
-            document.getElementById('status').innerText = "স্ট্যাটাস: Flashlight ON";
-            speakText("ফ্ল্যাশলাইট চালু করা হলো");
+        // ১. ফ্ল্যাশলাইট / লাইট অন ও অফ (বাংলা ও ইংরেজি শব্দ)
+        if (cmd.includes("ফ্ল্যাশ") || cmd.includes("flash") || cmd.includes("light") || cmd.includes("আলো")) {
+            if (cmd.includes("off") || cmd.includes("বন্ধ") || cmd.includes("নেভাও")) {
+                await toggleTorch(false);
+                document.getElementById('status').innerText = "স্ট্যাটাস: Flashlight OFF";
+                speakText("ফ্ল্যাশ বন্ধ করা হলো");
+            } else {
+                await toggleTorch(true);
+                document.getElementById('status').innerText = "স্ট্যাটাস: Flashlight ON";
+                speakText("ফ্ল্যাশ চালু করা হলো");
+            }
         } 
-        // ফ্ল্যাশলাইট অফ
-        else if (cmd.includes("বন্ধ") || cmd.includes("নেভাও") || cmd.includes("off") || cmd.includes("stop light")) {
-            await toggleTorch(false);
-            document.getElementById('status').innerText = "স্ট্যাটাস: Flashlight OFF";
-            speakText("ফ্ল্যাশলাইট বন্ধ করা হলো");
-        } 
-        // ভাইব্রেশন
+        // ২. ইউটিউব ওপেন
+        else if (cmd.includes("ইউটিউব") || cmd.includes("youtube")) {
+            document.getElementById('status').innerText = "স্ট্যাটাস: Opening YouTube";
+            speakText("ইউটিউব খোলা হচ্ছে");
+            window.open("https://www.youtube.com", "_blank");
+        }
+        // ৩. ফেসবুক ওপেন
+        else if (cmd.includes("ফেসবুক") || cmd.includes("facebook") || cmd.includes("fb")) {
+            document.getElementById('status').innerText = "স্ট্যাটাস: Opening Facebook";
+            speakText("ফেসবুক খোলা হচ্ছে");
+            window.open("https://www.facebook.com", "_blank");
+        }
+        // ৪. গুগল ওপেন
+        else if (cmd.includes("গুগল") || cmd.includes("google")) {
+            document.getElementById('status').innerText = "স্ট্যাটাস: Opening Google";
+            speakText("গুগল খোলা হচ্ছে");
+            window.open("https://www.google.com", "_blank");
+        }
+        // ৫. কল ডায়ালার ওপেন
+        else if (cmd.includes("কল") || cmd.includes("call") || cmd.includes("dial")) {
+            document.getElementById('status').innerText = "স্ট্যাটাস: Opening Dialer";
+            speakText("কল ডায়ালার খোলা হচ্ছে");
+            window.location.href = "tel:";
+        }
+        // ৬. ভাইব্রেশন
         else if (cmd.includes("ভাইব্রেট") || cmd.includes("vibrate")) {
             if (navigator.vibrate) {
                 navigator.vibrate([500, 200, 500]);
                 speakText("Vibrating");
             }
-        } 
-        // কল অপশন
-        else if (cmd.includes("কল") || cmd.includes("call") || cmd.includes("dial")) {
-            speakText("Opening dialer");
-            window.location.href = "tel:";
+        }
+        else {
+            document.getElementById('status').innerText = "স্ট্যাটাস: অজানা কমান্ড";
+            speakText("কমান্ডটি বোঝা যায়নি");
         }
     }
 
@@ -187,9 +204,14 @@
                     track.stop();
                     track = null;
                 }
+                document.body.style.backgroundColor = "#0d1117";
             }
         } catch (err) {
-            console.log("Torch Error: ", err);
+            // হার্ডওয়্যার টর্চ ব্লক হলে পুরো স্ক্রিন সাদা হয়ে লাইটের কাজ করবে
+            if (on) {
+                document.body.style.backgroundColor = "#ffffff";
+                alert("ক্যামেরা লাইট সাপোর্ট করেনি! স্ক্রিনের আলো বাড়িয়ে দেওয়া হলো।");
+            }
         }
     }
 
